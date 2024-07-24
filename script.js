@@ -36,78 +36,119 @@ Function: playGame repeat the game 5 times and choose the winner based in score.
 */
 let humanScore = 0;
 let computerScore = 0;
+const WINNING_SCORE = 5;
+const choice1 = document.querySelector('.Human-Choice');
+const choice2 = document.querySelector('.Computer-Choice');
+const score1 = document.querySelector('.Human-Score');
+const score2 = document.querySelector('.Computer-Score');
+const winner = document.querySelector('.Winner');
+const res = document.querySelector('.reset');
+const choice1r = 'Human Choice: ';
+const choice2r = 'Computer Choice: ';
+const score1r = 'Human Score: ';
+const score2r = 'Computer Score: ';
 
-function getComputerChoice(number){
-    if(number === 3){
-        return "scissors";
-    }else if(number === 2){
-        return "paper";
-    }else{
-        return "rock";
+const body = document.querySelector('body');
+
+function getComputerChoice() {
+    let random_number = Math.floor(Math.random() * 3 + 1);
+    switch (random_number) {
+        case 1:
+            return "Rock";
+        case 2:
+            return "Paper";
+        case 3:
+            return "Scissors";
     }
 }
 
-function getHumanChoice(){
-    let choice = prompt('please enter "rock", "paper" or "scissors"');
-    return choice;    
+function getHumanChoice() {
+    return new Promise((resolve) => {
+        const buttons = document.querySelectorAll('.buttons-container button');
+        buttons.forEach(button => {
+            button.addEventListener('click', (event) => {
+                let target = event.target;
+                let choice;
+                switch (target.className) {
+                    case 'Rock':
+                        choice = 'Rock';
+                        break;
+                    case 'Paper':
+                        choice = 'Paper';
+                        break;
+                    case 'Scissors':
+                        choice = 'Scissors';
+                        break;
+                    default:
+                        choice = 'Unknown';
+                }
+                resolve(choice);
+            }, { once: true }); // Ensure the event listener is only triggered once
+        });
+    });
 }
 
-function playRound(computerChoice, humanChoice){
+function updateDisplay(humanChoice, computerChoice) {
+    choice1.textContent = choice1r;
+    choice2.textContent = choice2r;
+    score1.textContent = score1r;
+    score2.textContent = score2r;
 
-    if(humanChoice.toLowerCase() === "rock"){
-        if (computerChoice === "paper"){
-            computerScore += 1;
-            console.log("Paper beats Rock! Computer wins");
-        }else if(computerChoice === "scissors"){
-            humanScore +=1;
-            console.log("Rock beats scissors! You win");
-        }else{
-            console.log("Rock crashes with Rock! It's a draw.")
+    choice1.textContent += humanChoice;
+    choice2.textContent += computerChoice;
+    score1.textContent += humanScore;
+    score2.textContent += computerScore;
+}
+
+function playRound() {
+    return getHumanChoice().then(humanChoice => {
+        let computerChoice = getComputerChoice();
+        console.log(`Player choice: ${humanChoice}`);
+        console.log(`Computer choice: ${computerChoice}`);
+
+        if (humanChoice === computerChoice) {
+            winner.textContent = 'Draw!';
+        } else if (
+            (humanChoice === 'Rock' && computerChoice === 'Scissors') ||
+            (humanChoice === 'Paper' && computerChoice === 'Rock') ||
+            (humanChoice === 'Scissors' && computerChoice === 'Paper')
+        ) {
+            winner.textContent = 'Player Wins!';
+            humanScore++;
+        } else {
+            winner.textContent = 'Computer Wins!';
+            computerScore++;
         }
-    }
 
-    else if(humanChoice.toLowerCase() === "paper"){
-        if (computerChoice === "scissors"){
-            computerScore += 1;
-            console.log("Scissors beats Paper! Computer wins");
-        }else if(computerChoice === "rock"){
-            humanScore +=1;
-            console.log("Paper beats Rock! You win");
-        }else{
-            console.log("Paper trash with Paper! It's a draw.")
-        }
-    }
+        updateDisplay(humanChoice, computerChoice);
 
-    else if(humanChoice.toLowerCase() === "scissors"){
-        if (computerChoice === "rock"){
-            computerScore += 1;
-            console.log("Rock beats Scissors! Computer wins");
-        }else if(computerChoice === "paper"){
-            humanScore +=1;
-            console.log("Scissors beats Paper! You win");
-        }else{
-            console.log("Scissors have not more sharp! It's a draw.")
+        if (humanScore >= WINNING_SCORE) {
+            let the_winner = document.createElement('p');
+            the_winner.textContent = 'Player wins the game!';
+            body.appendChild(the_winner);
+            return true;
+        } else if (computerScore >= WINNING_SCORE) {
+            let the_winner = document.createElement('p');
+            the_winner.textContent = 'Computer wins the game :(';
+            body.appendChild(the_winner);
+            return true;
         }
+        return false;
+    });
+}
+
+async function playGame() {
+    while(humanScore != WINNING_SCORE || computerScore != WINNING_SCORE){
+        const gameEnded = await playRound();
+        if (gameEnded) break;
     }
 }
 
-function playGame(){
-    let i = 1;
-    while(i <= 5){
-    let number = Math.floor(Math.random() * 3) + 1;
-    let computerChoice = getComputerChoice(number);
-    let humanChoice = getHumanChoice();
-    playRound(computerChoice, humanChoice);
-    i++
-    }
-    console.log(`Your score is ${humanScore}.`)
-    console.log(`Computer score is ${computerScore}.`)
-
-    if(humanScore > computerScore){
-        console.log("Congratulations! YOU WON!")
-    }else{
-        console.log("Your effort was not enough :(. You Lose.")
-    }
-}
-
-playGame()
+const play = document.querySelector('.Play');
+play.addEventListener('click', () => {
+    playGame();
+    play.remove();
+});
+res.addEventListener('click', ()=>{
+    window.location.reload();
+})
